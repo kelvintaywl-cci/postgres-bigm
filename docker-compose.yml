@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
+        # modify this to switch Postgres version (e.g., 9.6)
         - POSTGRES_VERSION=14
     ports:
       - "5432:5432"

@@ -4,7 +4,8 @@ This repo is an example of spinning up a Postgres DB container loaded with pg_bi
 
 
 ```console
-# this will spin up a custom Postgres DB (Postgres v14) with pg_bigm installed.
+# this will spin up a custom Postgres DB (default: Postgres v14) with pg_bigm installed.
+# you can set the required Postgres version (default: 14) via the POSTGRES_VERSION build args (see docker-compose.yml).
 # additionally, we run some SQL for intialization via mounting (see postgres/init/*.sql files)
 
 $ docker-compose up --detach
