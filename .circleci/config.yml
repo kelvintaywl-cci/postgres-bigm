@@ -35,9 +35,14 @@ commands:
             docker context inspect circleci
 
 executors:
-  docker:
+  docker-postgres-bigm:
     docker:
       - image: cimg/base:stable
+      - image: kelvintaywlcircleci/postgres-pg_bigm:14
+        environment:
+          POSTGRES_DB: wiki
+          POSTGRES_USER: Free
+          POSTGRES_PASSWORD: Willy
     resource_class: medium
   machine:
     machine:
@@ -46,40 +51,23 @@ executors:
     resource_class: medium
 
 jobs:
-  build-push:
-    environment:
-      <<: *environment
-    parameters:
-      postgres-version:
-        description: Postgres version to build for
-        type: string
-      image-name:
-        description: image name for Docker image to be pushed
-        type: string
-        # See https://hub.docker.com/repository/docker/kelvintaywlcircleci/hello-buildx
-        default: "postgres-pg_bigm"
-    executor: machine
+  test:
+    executor: docker-postgres-bigm
     steps:
       - checkout
-      - docker-registry-login
       - run:
-          name: Build << parameters.image-name>>:<< parameters.postgres-version >>
+          name: initialize DB
           command: |
-            docker image build \
-              --tag "${DOCKER_REGISTRY}/${DOCKER_USER}/<< parameters.image-name>>:<< parameters.postgres-version >>" \
-              --build-arg "POSTGRES_VERSION=<< parameters.postgres-version >>" \
-              .
+            sleep 5
+
+            PGPASSWORD=Willy psql -h 127.0.0.1 -p 5432 -d wiki -U Free -f postgres/init/00_extensions.sql
+            PGPASSWORD=Willy psql -h 127.0.0.1 -p 5432 -d wiki -U Free -f postgres/init/50_schema.sql
       - run:
-          name: Push << parameters.image-name>>:<< parameters.postgres-version >>
+          name: execute SQL statement
           command: |
-            docker image push "${DOCKER_REGISTRY}/${DOCKER_USER}/<< parameters.image-name>>:<< parameters.postgres-version >>"
+            PGPASSWORD=Willy psql -h 127.0.0.1 -p 5432 -d wiki -U Free -c "SELECT * FROM pg_tools WHERE description LIKE '%search%';"
 
 workflows:
   main:
     jobs:
-      - build-push:
-          matrix:
-            parameters:
-              postgres-version:
-                - "14"
-                - "9.6"
+      - test
