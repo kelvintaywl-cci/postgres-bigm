@@ -1,71 +1,19 @@
 version: 2.1
 
-defaults:
-  environment: &environment
-    DOCKER_REGISTRY: docker.io
-    DOCKER_USER: kelvintaywlcircleci
-    DOCKER_LOGIN: kelvintaywlcircleci
-    # DOCKER_PASSWORD will be injected as a secret
-
-commands:
-  docker-registry-login:
-    description: log in to the Docker image registry
-    steps:
-      - run:
-          name: Login to registry
-          command: |
-            # login credentials should be provided via context or project environment variables.
-            echo $DOCKER_PASSWORD | docker login $DOCKER_REGISTRY --username $DOCKER_LOGIN --password-stdin
-  setup-buildx:
-    description: set up context and builder instances for Docker buildx
-    steps:
-      - run:
-          name: Check Docker settings (for buildx)
-          command: |
-            docker version
-            docker buildx version
-            docker context inspect
-      - run:
-          name: Setup docker buildx
-          command: |
-            docker context create circleci
-            docker buildx create --use circleci
-
-            docker buildx ls
-            docker context inspect circleci
-
 executors:
-  docker-postgres-bigm:
+  docker-postgres:
     docker:
-      - image: cimg/base:stable
-      - image: kelvintaywlcircleci/postgres-pg_bigm:14
-        environment:
-          POSTGRES_DB: wiki
-          POSTGRES_USER: Free
-          POSTGRES_PASSWORD: Willy
-    resource_class: medium
-  machine:
-    machine:
-      # See https://circleci.com/developer/images?imageType=machine
-      image: ubuntu-2204:2022.07.1
-    resource_class: medium
+      - image: cimg/base:current
+      - image: postgres:11-alpine-ram
+      - image: postgres:11-alpine-ram
+        name: bigbird
+    resource_class: large
 
 jobs:
   test:
-    executor: docker-postgres-bigm
+    executor: docker-postgres
     steps:
       - checkout
-      - run:
-          name: initialize DB
-          command: |
-            sleep 5
-
-            PGPASSWORD=Willy psql -h 127.0.0.1 -p 5432 -d wiki -U Free -f postgres/init/00_extensions.sql
-            PGPASSWORD=Willy psql -h 127.0.0.1 -p 5432 -d wiki -U Free -f postgres/init/50_schema.sql
-      - run:
-          name: execute SQL statement
-          command: |
-            PGPASSWORD=Willy psql -h 127.0.0.1 -p 5432 -d wiki -U Free -c "SELECT * FROM pg_tools WHERE description LIKE '%search%';"
 
 workflows:
   main:
