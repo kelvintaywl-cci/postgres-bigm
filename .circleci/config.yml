@@ -4,8 +4,8 @@ executors:
   docker-postgres:
     docker:
       - image: cimg/base:current
-      - image: postgres:11-alpine-ram
-      - image: postgres:11-alpine-ram
+      - image: circleci/postgres:11-alpine-ram
+      - image: circleci/postgres:11-alpine-ram
         name: bigbird
     resource_class: large
 
